@@ -11,7 +11,7 @@ spec:
       labels:
         app: mysql-setup
     spec:
-      restartPolicy: Never
+      restartPolicy: OnFailure
       initContainers:
       # - name: init-mysql
       #   image: busybox:1.28
@@ -50,7 +50,7 @@ spec:
       labels:
         app: another-mysql-setup
     spec:
-      restartPolicy: Never
+      restartPolicy: OnFailure
       initContainers:
       - name: wait-for-mysql-setup
         image: k8s-wait-for
@@ -59,10 +59,10 @@ spec:
           - "pod"
           - "-lapp=mysql-setup"
       containers:
-      - name: busybox
-        image: busybox:1.28
+      - name: mysql-query
+        args: ["mysql", "--host=mysql", "--user=root", "--password=root", "--database=nylas", "--execute", "source /app/mysql-populate.sql;"]
+        image: mysql-client
         imagePullPolicy: IfNotPresent
-        command: ['sh', '-c', "echo Success"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -165,6 +165,7 @@ metadata:
   labels:
     app: mysql
 spec:
+  type: LoadBalancer
   selector:
     app: mysql
   ports:
